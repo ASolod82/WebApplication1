@@ -1,8 +1,10 @@
-﻿using System;
+﻿using System.Security.Cryptography;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -53,6 +55,7 @@ namespace WebApplication1
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddSingleton<IConfiguration>(Configuration);
+            _computedConfigurationHash = ComputeConfigurationHash();
             //var q =  Configuration["SECURE_APP"] as string;
         }
 
@@ -67,23 +70,24 @@ namespace WebApplication1
             app.UseMvc();
             _appLifetime = appLifetime;
             appLifetime.ApplicationStopped.Register(OnStopped);
-            appLifetime.ApplicationStarted.Register(OnStarted);
-        }
-
-        bool _started;
-
-        private void OnStarted()
-        {
-            _started = true;
         }
 
         private void OnChanged()
         {
-            Console.WriteLine("HELLO");
-            if (_started)
+            if (_computedConfigurationHash != null && !ComputeConfigurationHash().SequenceEqual(_computedConfigurationHash))
             {
-                Debugger.Launch();
                 _appLifetime?.StopApplication();
+            }
+        }
+
+        private byte[] _computedConfigurationHash;
+
+        private byte[] ComputeConfigurationHash()
+        {
+            using (var ms = new MemoryStream())
+            {
+                new BinaryFormatter().Serialize(ms, new Dictionary<string, string>(Configuration.AsEnumerable(), default));
+                return SHA1.Create().ComputeHash(ms.ToArray());
             }
         }
 
