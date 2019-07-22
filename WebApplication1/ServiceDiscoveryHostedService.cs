@@ -1,5 +1,6 @@
 ﻿using Consul;
 using Microsoft.Extensions.Hosting;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,12 +22,22 @@ namespace WebApplication1
         {
             _registrationId = $"{_config.ServiceName}-{_config.ServiceId}";
 
+            var healhurl = _config.ServiceAddress + "api/health/status";
+            Console.WriteLine($"Healhcheck url : {healhurl}");
+
             var registration = new AgentServiceRegistration
             {
                 ID = _registrationId,
                 Name = _config.ServiceName,
                 Address = _config.ServiceAddress.Host,
-                Port = _config.ServiceAddress.Port
+                Port = _config.ServiceAddress.Port,
+                Check = new AgentCheckRegistration()
+                {
+                    HTTP = healhurl,
+                    Notes = "Checks api/health/status on Bridge localhost",
+                    Timeout = TimeSpan.FromSeconds(3),
+                    Interval = TimeSpan.FromSeconds(10)
+                }
             };
 
             await _client.Agent.ServiceDeregister(registration.ID, cancellationToken);
