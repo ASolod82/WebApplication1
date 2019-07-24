@@ -1,16 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.WindowsServices;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using Winton.Extensions.Configuration.Consul;
 
 namespace WebApplication1
 {
@@ -35,6 +28,23 @@ namespace WebApplication1
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+                .ConfigureAppConfiguration((hostingContext, config) => {
+                config.AddConsul("Cloud/Core", default, options =>
+                {
+                    options.ConsulConfigurationOptions =
+                                         cco => { cco.Address = new Uri("http://localhost:8500"); };
+                    options.Optional = true;
+                    options.ReloadOnChange = true;
+                    options.OnLoadException = exceptioncontext => { exceptioncontext.Ignore = false; };
+
+                });
+
+            })
+                .UseStartup<Startup>() 
+                .UseSerilog((hostingContext, loggerConfiguration) => loggerConfiguration
+                    .ReadFrom.Configuration(hostingContext.Configuration)
+                    .Enrich.FromLogContext()
+                    .MinimumLevel.Override("Microsoft", LogEventLevel.Information))    
+            ;
     }
 }
