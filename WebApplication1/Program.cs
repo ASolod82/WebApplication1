@@ -27,9 +27,9 @@ namespace WebApplication1
         //static CancellationToken _cancellationToken = new CancellationToken();
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) => WebHost.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((hostingContext, config) =>
+            .ConfigureAppConfiguration(builder =>
             {
-                config.AddConsul("Cloud/Core", default, options =>
+                builder.AddConsul("Cloud/Core", default, options =>
                 {
                     options.ConsulConfigurationOptions =
                                             cco => { cco.Address = new Uri("http://localhost:8500"); };
@@ -41,8 +41,8 @@ namespace WebApplication1
             })
             .UseStartup<Startup>()
             .UseKestrel()
-            .UseSerilog((hostingContext, loggerConfiguration) => loggerConfiguration
-                .ReadFrom.Configuration(hostingContext.Configuration)
+            .UseSerilog((builderContext, loggerConfiguration) => loggerConfiguration
+                .ReadFrom.Configuration(builderContext.Configuration)
                 .Enrich.FromLogContext()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information));
     }
