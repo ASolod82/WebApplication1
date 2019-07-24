@@ -1,49 +1,36 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
-using Winton.Extensions.Configuration.Consul;
+using System.Security.Cryptography;
 
 namespace WebApplication1
 {
     public class Startup
     {
         private IApplicationLifetime _appLifetime;
+        private readonly ILogger<Startup> _logger;
 
-        public Startup(IConfiguration configuration, IHostingEnvironment env)
+
+        public Startup(IConfiguration configuration, IHostingEnvironment env, ILogger<Startup> logger)
         {
+            _logger = logger;
 
-            Configuration = new ConfigurationBuilder().AddConfiguration(configuration)
-                .AddConsul("site1/appsettings.json", default, options =>
-          {
-              options.ConsulConfigurationOptions =
-                                   cco => { cco.Address = new Uri("http://localhost:8500"); };
-              options.Optional = true;
-              options.ReloadOnChange = true;
-              options.OnLoadException = exceptioncontext => { exceptioncontext.Ignore = false; };
+            Configuration = configuration;
 
-          }).Build();
+            //Configuration.Get
+
 
             ChangeToken.OnChange(Configuration.GetReloadToken, OnChanged);
-
-            //var builder = new ConfigurationBuilder()
-            //    .SetBasePath(env.ContentRootPath)
-            //    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            //    .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true);
-            //builder.AddEnvironmentVariables("SECURE_");
-            //Configuration = builder.Build();
 
         }
 
@@ -52,8 +39,8 @@ namespace WebApplication1
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            ConfigureConsul(services);
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-
             services.AddSingleton<IConfiguration>(Configuration);
             _computedConfigurationHash = ComputeConfigurationHash();
             //var q =  Configuration["SECURE_APP"] as string;
@@ -67,7 +54,9 @@ namespace WebApplication1
                 app.UseDeveloperExceptionPage();
             }
 
+            //app.UseSerilogRequestLogging();
             app.UseMvc();
+
             _appLifetime = appLifetime;
             appLifetime.ApplicationStopped.Register(OnStopped);
         }
@@ -76,6 +65,7 @@ namespace WebApplication1
         {
             if (_computedConfigurationHash != null && !ComputeConfigurationHash().SequenceEqual(_computedConfigurationHash))
             {
+                Console.WriteLine(Configuration["UseUrls"]);
                 _appLifetime?.StopApplication();
             }
         }
@@ -114,6 +104,12 @@ namespace WebApplication1
             //    }
             //}.Start();
 
+        }
+
+        private void ConfigureConsul(IServiceCollection services)
+        {
+            var serviceConfig = Configuration.GetServiceConfig();
+            services.RegisterConsulServices(serviceConfig);
         }
     }
 }

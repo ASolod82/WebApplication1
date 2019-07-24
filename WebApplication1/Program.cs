@@ -1,16 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
+﻿using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.WindowsServices;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using System;
+using Winton.Extensions.Configuration.Consul;
 
 namespace WebApplication1
 {
@@ -26,15 +19,31 @@ namespace WebApplication1
             //Start AppContext.BaseDirectory
 
 
-//            Thread.Sleep(2000);
+            //            Thread.Sleep(2000);
         }
 
 
 
         //static CancellationToken _cancellationToken = new CancellationToken();
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) => WebHost.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((hostingContext, config) =>
+            {
+                config.AddConsul("Cloud/Core", default, options =>
+                {
+                    options.ConsulConfigurationOptions =
+                                            cco => { cco.Address = new Uri("http://localhost:8500"); };
+                    options.Optional = true;
+                    options.ReloadOnChange = true;
+                    options.OnLoadException = exceptioncontext => { exceptioncontext.Ignore = false; };
+
+                });
+            })
+            .UseStartup<Startup>()
+            .UseKestrel()
+            .UseSerilog((hostingContext, loggerConfiguration) => loggerConfiguration
+                .ReadFrom.Configuration(hostingContext.Configuration)
+                .Enrich.FromLogContext()
+                .MinimumLevel.Override("Microsoft", LogEventLevel.Information));
     }
 }
