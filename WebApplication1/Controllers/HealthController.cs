@@ -20,15 +20,16 @@ namespace WebApplication1.Controllers
         [HttpGet("status/")]
         public ActionResult<HealsStatus> Get()
         {
-           
+
             _logger.LogInformation("Health check answering...");
-         
-            return Ok(new HealsStatus() {
+
+            return Ok(new HealsStatus()
+            {
                 ServiceID = "0001",
                 ServiceName = "Bridge",
                 ServceInfo = "Bridge v 1.1.1"
             });
         }
-     
+
     }
 }

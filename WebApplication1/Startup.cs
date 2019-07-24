@@ -1,16 +1,17 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 namespace WebApplication1
 {
@@ -20,11 +21,16 @@ namespace WebApplication1
         private readonly ILogger<Startup> _logger;
 
 
-        public Startup(IConfiguration configuration, IHostingEnvironment env,  ILogger<Startup> logger)
+        public Startup(IConfiguration configuration, IHostingEnvironment env, ILogger<Startup> logger)
         {
             _logger = logger;
-            
+
             Configuration = configuration;
+
+            //Configuration.Get
+
+
+            ChangeToken.OnChange(Configuration.GetReloadToken, OnChanged);
 
         }
 
@@ -50,7 +56,7 @@ namespace WebApplication1
 
             //app.UseSerilogRequestLogging();
             app.UseMvc();
-           
+
             _appLifetime = appLifetime;
             appLifetime.ApplicationStopped.Register(OnStopped);
         }
@@ -59,6 +65,7 @@ namespace WebApplication1
         {
             if (_computedConfigurationHash != null && !ComputeConfigurationHash().SequenceEqual(_computedConfigurationHash))
             {
+                Console.WriteLine(Configuration["UseUrls"]);
                 _appLifetime?.StopApplication();
             }
         }

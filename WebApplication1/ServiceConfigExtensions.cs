@@ -7,7 +7,8 @@ namespace WebApplication1
     {
         public static ServiceConfig GetServiceConfig(this IConfiguration configuration)
         {
-            if (configuration == null) {
+            if (configuration == null)
+            {
                 throw new ArgumentNullException(nameof(configuration));
             }
 

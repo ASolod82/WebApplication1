@@ -1,7 +1,7 @@
-﻿using System;
-using Consul;
+﻿using Consul;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System;
 
 
 namespace WebApplication1
