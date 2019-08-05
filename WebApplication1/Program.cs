@@ -11,6 +11,7 @@ namespace WebApplication1
     {
         public static void Main(string[] args)
         {
+            Console.WriteLine("Starting...");
             var webHost = CreateWebHostBuilder(args).Build();
             //webHost.RunAsService();
             webHost.Run();

@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
+using WebApplication1.Services;
 
 namespace WebApplication1
 {
@@ -42,6 +43,8 @@ namespace WebApplication1
             ConfigureConsul(services);
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
             services.AddSingleton<IConfiguration>(Configuration);
+            services.AddHostedService<RabbitMQService>();
+            services.AddTransient<VaultClientService>();
             _computedConfigurationHash = ComputeConfigurationHash();
             //var q =  Configuration["SECURE_APP"] as string;
         }
